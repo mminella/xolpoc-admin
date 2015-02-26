@@ -21,9 +21,14 @@ import io.pivotal.receptor.commands.ActualLRPResponse;
 import io.pivotal.receptor.commands.DesiredLRPCreateRequest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,17 +46,27 @@ public class StreamController {
 	private final ReceptorClient receptorClient = new ReceptorClient();
 
 	@RequestMapping(value="/")
-	public List<ActualLRPResponse> listModules() {
-		List<ActualLRPResponse> modules = new ArrayList<ActualLRPResponse>();
-		 List<ActualLRPResponse> responses = receptorClient.findAllLongRunningProcesses();
-		 for (ActualLRPResponse lrp: responses) {
-			 // TODO: aggregate module state for each stream
-			 String guid = lrp.getProcessGuid();
-			 if (guid.startsWith("xd-") && !"xd-admin".equals(guid)) {
-				 modules.add(lrp);
-			 }
-		 }
-		 return modules;
+	public Map<String, List<String>> listStreams() {
+		Map<String, List<String>> streams = new HashMap<String, List<String>>();
+		for (ActualLRPResponse lrp: receptorClient.findAllLongRunningProcesses()) {
+			String guid = lrp.getProcessGuid();
+			if (guid.startsWith("xd-") && !"xd-admin".equals(guid)) {
+				String[] tokens = guid.split("-", 3);
+				Assert.isTrue(tokens.length == 3);
+				String streamName = tokens[1];
+				String moduleName = tokens[2];
+				streams.putIfAbsent(streamName, new ArrayList<String>());
+				StringBuilder moduleStatus = new StringBuilder(moduleName + ":" + lrp.getState());
+				if (StringUtils.hasText(lrp.getAddress())) {
+					moduleStatus.append("@" + lrp.getAddress());
+					if (StringUtils.hasText(lrp.getInstanceGuid())) {
+						moduleStatus.append("/" + lrp.getInstanceGuid());
+					}
+				}
+				streams.get(streamName).add(moduleStatus.toString());
+			}
+		}
+		return streams;
 	}
 
 	@RequestMapping(value = "/{name}", method = RequestMethod.POST)
@@ -63,7 +78,7 @@ public class StreamController {
 			String moduleName = modules[i];
 			String moduleType = (i == 0) ? "source" : (i == modules.length - 1) ? "sink" : "processor"; 
 			String modulePath = name + "." + moduleType + "." + moduleName + "." + i;
-			String guid = "xd-" + name + "-" + moduleName;
+			String guid = "xd-" + name + "-" + moduleName + "-" + i;
 			DesiredLRPCreateRequest request = new DesiredLRPCreateRequest();
 			request.setProcessGuid(guid);
 			request.setRootfs(dockerPath);
@@ -82,11 +97,15 @@ public class StreamController {
 	@ResponseStatus(HttpStatus.OK)
 	public void destroyStream(@PathVariable("name") String name) {
 		List<ActualLRPResponse> responses = receptorClient.findAllLongRunningProcesses();
+		Set<String> guidsToDestroy = new HashSet<String>();
 		for (ActualLRPResponse app : responses) {
 			if (app.getProcessGuid().startsWith("xd-" + name + "-")) {
 				// TODO: capture all and destroy in order of index
-				receptorClient.destroyLongRunningProcess(app.getProcessGuid());
+				guidsToDestroy.add(app.getProcessGuid());
 			}
+		}
+		for (String guid : guidsToDestroy) {
+			receptorClient.destroyLongRunningProcess(guid);
 		}
 	}
 
