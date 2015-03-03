@@ -43,6 +43,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class StreamController {
 
+	public static final String DOCKER_PATH = "docker:///springxd/xol-poc";
+
+	public static final String BASE_ADDRESS = "192.168.11.11.xip.io";
+
+	public static final String ADMIN_GUID = "xd-admin";
+
+	private static final String MODULE_JAR_PATH = "/opt/xd/lib/xolpoc-0.0.1-SNAPSHOT.jar";
+
 	private final ReceptorClient receptorClient = new ReceptorClient();
 
 	@RequestMapping(value="/")
@@ -50,7 +58,7 @@ public class StreamController {
 		Map<String, List<String>> streams = new HashMap<String, List<String>>();
 		for (ActualLRPResponse lrp: receptorClient.findAllLongRunningProcesses()) {
 			String guid = lrp.getProcessGuid();
-			if (guid.startsWith("xd-") && !"xd-admin".equals(guid)) {
+			if (guid.startsWith("xd-") && !ADMIN_GUID.equals(guid)) {
 				String[] tokens = guid.split("-", 3);
 				Assert.isTrue(tokens.length == 3);
 				String streamName = tokens[1];
@@ -71,8 +79,6 @@ public class StreamController {
 
 	@RequestMapping(value = "/{name}", method = RequestMethod.POST)
 	public void createStream(@PathVariable("name") String name, @RequestBody String definition) {
-		String dockerPath = "docker:///pperalta/xd";
-		String jarPath = "/opt/xd/lib/xolpoc-0.0.1-SNAPSHOT.jar";
 		String[] modules = StringUtils.tokenizeToStringArray(definition, "|");
 		for (int i = modules.length - 1; i >= 0; i--) {
 			String moduleName = modules[i];
@@ -81,14 +87,16 @@ public class StreamController {
 			String guid = "xd-" + name + "-" + moduleName + "-" + i;
 			DesiredLRPCreateRequest request = new DesiredLRPCreateRequest();
 			request.setProcessGuid(guid);
-			request.setRootfs(dockerPath);
+			request.setRootfs(DOCKER_PATH);
 			request.runAction.setPath("java");
 			request.runAction.addArg("-Dmodule=" + modulePath);
 			request.runAction.addArg("-Dspring.redis.host=" + System.getProperty("spring.redis.host"));
 			request.runAction.addArg("-Dserver.port=500" + i);
 			request.runAction.addArg("-jar");
-			request.runAction.addArg(jarPath);
-			request.addRoute(8080, new String[] {guid + ".192.168.11.11.xip.io", guid + "-8080.192.168.11.11.xip.io"});
+			request.runAction.addArg(MODULE_JAR_PATH);
+			request.setPorts(new int[] {8080, 9000});
+			request.addRoute(8080, new String[] {guid + "." + BASE_ADDRESS, guid + "-8080." + BASE_ADDRESS});
+			request.addRoute(9000, new String[] {guid + "-9000." + BASE_ADDRESS});
 			receptorClient.createLongRunningProcess(request);
 		}
 	}

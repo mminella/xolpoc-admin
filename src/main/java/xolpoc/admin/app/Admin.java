@@ -16,6 +16,8 @@
 
 package xolpoc.admin.app;
 
+import static xolpoc.admin.web.StreamController.*;
+
 import io.pivotal.receptor.client.ReceptorClient;
 import io.pivotal.receptor.commands.DesiredLRPCreateRequest;
 
@@ -37,20 +39,21 @@ import xolpoc.admin.web.StreamController;
 @Import(StreamController.class)
 public class Admin {
 
+	private static final String ADMIN_JAR_PATH = "/opt/xd/lib/xolpoc-admin-0.0.1-SNAPSHOT.jar";
+
 	public static void main(String[] args) throws Exception {
 		String busHost = System.getProperty("spring.redis.host");
 		if (busHost == null) { // bootstrap
 			busHost = Inet4Address.getLocalHost().getHostAddress();
 			DesiredLRPCreateRequest admin = new DesiredLRPCreateRequest();
-			String guid = "xd-admin";
-			admin.setProcessGuid(guid);
-			admin.setRootfs("docker:///markfisher/xd-poc");
+			admin.setProcessGuid(ADMIN_GUID);
+			admin.setRootfs(DOCKER_PATH);
 			admin.setInstances(2);
 			admin.runAction.setPath("java");
 			admin.runAction.addArg("-Dspring.redis.host=" + busHost);
 			admin.runAction.addArg("-jar");
-			admin.runAction.addArg("/opt/xd/lib/xolpoc-admin-0.0.1-SNAPSHOT.jar");
-			admin.addRoute(8080, new String[] { guid + ".192.168.11.11.xip.io", guid + "-8080.192.168.11.11.xip.io"});
+			admin.runAction.addArg(ADMIN_JAR_PATH);
+			admin.addRoute(8080, new String[] { ADMIN_GUID + "." + BASE_ADDRESS, ADMIN_GUID + "-8080." + BASE_ADDRESS});
 			ReceptorClient client = new ReceptorClient();
 			client.createLongRunningProcess(admin);
 		}
