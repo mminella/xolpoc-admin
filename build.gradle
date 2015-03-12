@@ -35,6 +35,7 @@ dependencies {
 	}
     compile("org.springframework.boot:spring-boot-starter-log4j")
     compile("io.pivotal.receptor:receptor-client:0.0.1-SNAPSHOT")
+    compile("org.springframework.xd:spring-xd-module:1.1.0.RELEASE")
     compile("org.springframework.xd:spring-xd-rest-client:1.1.0.RELEASE")
     testCompile("org.springframework.boot:spring-boot-starter-test")
 }

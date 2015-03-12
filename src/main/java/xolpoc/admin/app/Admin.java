@@ -16,8 +16,7 @@
 
 package xolpoc.admin.app;
 
-import static xolpoc.admin.web.StreamController.*;
-
+import static xolpoc.spi.receptor.ReceptorModuleDeployer.*;
 import io.pivotal.receptor.client.ReceptorClient;
 import io.pivotal.receptor.commands.DesiredLRPCreateRequest;
 

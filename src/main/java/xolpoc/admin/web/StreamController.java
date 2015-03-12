@@ -16,26 +16,25 @@
 
 package xolpoc.admin.web;
 
-import io.pivotal.receptor.client.ReceptorClient;
-import io.pivotal.receptor.commands.ActualLRPResponse;
-import io.pivotal.receptor.commands.DesiredLRPCreateRequest;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.xd.module.ModuleDescriptor;
+
+import xolpoc.model.StreamDefinition;
+import xolpoc.spi.ModuleDeployer;
+import xolpoc.spi.StreamDefinitionRepository;
+import xolpoc.spi.defaults.InMemoryStreamDefinitionRepository;
+import xolpoc.spi.receptor.ReceptorModuleDeployer;
 
 /**
  * @author Mark Fisher
@@ -43,77 +42,39 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class StreamController {
 
-	public static final String DOCKER_PATH = "docker:///springxd/xol-poc";
+	private final StreamDefinitionRepository repository = new InMemoryStreamDefinitionRepository();
 
-	public static final String BASE_ADDRESS = "192.168.11.11.xip.io";
-
-	public static final String ADMIN_GUID = "xd-admin";
-
-	private static final String MODULE_JAR_PATH = "/opt/xd/lib/xolpoc-0.0.1-SNAPSHOT.jar";
-
-	private final ReceptorClient receptorClient = new ReceptorClient();
+	private final ModuleDeployer deployer = new ReceptorModuleDeployer();
 
 	@RequestMapping(value="/")
 	public Map<String, List<String>> listStreams() {
-		Map<String, List<String>> streams = new HashMap<String, List<String>>();
-		for (ActualLRPResponse lrp: receptorClient.findAllLongRunningProcesses()) {
-			String guid = lrp.getProcessGuid();
-			if (guid.startsWith("xd-") && !ADMIN_GUID.equals(guid)) {
-				String[] tokens = guid.split("-", 3);
-				Assert.isTrue(tokens.length == 3);
-				String streamName = tokens[1];
-				String moduleName = tokens[2];
-				streams.putIfAbsent(streamName, new ArrayList<String>());
-				StringBuilder moduleStatus = new StringBuilder(moduleName + ":" + lrp.getState());
-				if (StringUtils.hasText(lrp.getAddress())) {
-					moduleStatus.append("@" + lrp.getAddress());
-					if (StringUtils.hasText(lrp.getInstanceGuid())) {
-						moduleStatus.append("/" + lrp.getInstanceGuid());
-					}
-				}
-				streams.get(streamName).add(moduleStatus.toString());
+		Map<String, List<String>> results = new HashMap<String, List<String>>();
+		for (Map.Entry<String, StreamDefinition> entry : repository.findAll().entrySet()) {
+			List<String> moduleStates = new ArrayList<String>();
+			for (ModuleDescriptor descriptor : entry.getValue().getModuleDescriptors()) {
+				moduleStates.addAll(deployer.getStates(descriptor));
 			}
+			results.put(entry.getKey(), moduleStates);
 		}
-		return streams;
+		return results;
 	}
 
 	@RequestMapping(value = "/{name}", method = RequestMethod.POST)
-	public void createStream(@PathVariable("name") String name, @RequestBody String definition) {
-		String[] modules = StringUtils.tokenizeToStringArray(definition, "|");
-		for (int i = modules.length - 1; i >= 0; i--) {
-			String moduleName = modules[i];
-			String moduleType = (i == 0) ? "source" : (i == modules.length - 1) ? "sink" : "processor"; 
-			String modulePath = name + "." + moduleType + "." + moduleName + "." + i;
-			String guid = "xd-" + name + "-" + moduleName + "-" + i;
-			DesiredLRPCreateRequest request = new DesiredLRPCreateRequest();
-			request.setProcessGuid(guid);
-			request.setRootfs(DOCKER_PATH);
-			request.runAction.setPath("java");
-			request.runAction.addArg("-Dmodule=" + modulePath);
-			request.runAction.addArg("-Dspring.redis.host=" + System.getProperty("spring.redis.host"));
-			request.runAction.addArg("-Dserver.port=500" + i);
-			request.runAction.addArg("-jar");
-			request.runAction.addArg(MODULE_JAR_PATH);
-			request.setPorts(new int[] {8080, 9000});
-			request.addRoute(8080, new String[] {guid + "." + BASE_ADDRESS, guid + "-8080." + BASE_ADDRESS});
-			request.addRoute(9000, new String[] {guid + "-9000." + BASE_ADDRESS});
-			receptorClient.createLongRunningProcess(request);
+	public void createStream(@PathVariable("name") String name, @RequestBody String dsl) {
+		StreamDefinition definition = repository.create(name, dsl);
+		List<ModuleDescriptor> modules = definition.getModuleDescriptors();
+		for (int i = modules.size() - 1; i >= 0; i--) {
+			deployer.deploy(modules.get(i));
 		}
 	}
 
 	@RequestMapping(value = "/{name}", method = RequestMethod.DELETE)
 	@ResponseStatus(HttpStatus.OK)
 	public void destroyStream(@PathVariable("name") String name) {
-		List<ActualLRPResponse> responses = receptorClient.findAllLongRunningProcesses();
-		Set<String> guidsToDestroy = new HashSet<String>();
-		for (ActualLRPResponse app : responses) {
-			if (app.getProcessGuid().startsWith("xd-" + name + "-")) {
-				// TODO: capture all and destroy in order of index
-				guidsToDestroy.add(app.getProcessGuid());
-			}
-		}
-		for (String guid : guidsToDestroy) {
-			receptorClient.destroyLongRunningProcess(guid);
+		StreamDefinition definition = repository.find(name);
+		List<ModuleDescriptor> modules = definition.getModuleDescriptors();
+		for (ModuleDescriptor module : modules) {
+			deployer.undeploy(module);
 		}
 	}
 
