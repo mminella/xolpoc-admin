@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.xd.module.ModuleDescriptor;
 
+import xolpoc.model.ModuleStatus;
 import xolpoc.model.StreamDefinition;
 import xolpoc.spi.ModuleDeployer;
 import xolpoc.spi.StreamDefinitionRepository;
@@ -47,12 +48,12 @@ public class StreamController {
 	private final ModuleDeployer deployer = new ReceptorModuleDeployer();
 
 	@RequestMapping(value="/")
-	public Map<String, List<String>> listStreams() {
-		Map<String, List<String>> results = new HashMap<String, List<String>>();
+	public Map<String, List<ModuleStatus>> listStreams() {
+		Map<String, List<ModuleStatus>> results = new HashMap<String, List<ModuleStatus>>();
 		for (Map.Entry<String, StreamDefinition> entry : repository.findAll().entrySet()) {
-			List<String> moduleStates = new ArrayList<String>();
+			List<ModuleStatus> moduleStates = new ArrayList<ModuleStatus>();
 			for (ModuleDescriptor descriptor : entry.getValue().getModuleDescriptors()) {
-				moduleStates.addAll(deployer.getStates(descriptor));
+				moduleStates.add(deployer.getStatus(descriptor));
 			}
 			results.put(entry.getKey(), moduleStates);
 		}

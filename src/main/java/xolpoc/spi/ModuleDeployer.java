@@ -16,9 +16,9 @@
 
 package xolpoc.spi;
 
-import java.util.List;
-
 import org.springframework.xd.module.ModuleDescriptor;
+
+import xolpoc.model.ModuleStatus;
 
 /**
  * @author Mark Fisher
@@ -29,6 +29,6 @@ public interface ModuleDeployer {
 
 	void undeploy(ModuleDescriptor descriptor);
 
-	List<String> getStates(ModuleDescriptor descriptor);
+	ModuleStatus getStatus(ModuleDescriptor descriptor);
 
 }

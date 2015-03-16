@@ -20,12 +20,15 @@ import io.pivotal.receptor.client.ReceptorClient;
 import io.pivotal.receptor.commands.ActualLRPResponse;
 import io.pivotal.receptor.commands.DesiredLRPCreateRequest;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.util.StringUtils;
 import org.springframework.xd.module.ModuleDescriptor;
 
+import xolpoc.model.ModuleInstanceStatus;
+import xolpoc.model.ModuleStatus;
+import xolpoc.model.ModuleStatus.ModuleStatusBuilder;
 import xolpoc.spi.ModuleDeployer;
 
 /**
@@ -67,20 +70,20 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 	}
 
 	@Override
-	public List<String> getStates(ModuleDescriptor descriptor) {
-		List<String> results = new ArrayList<String>();
-		List<ActualLRPResponse> lrps = receptorClient.findLongRunningProcesses(guid(descriptor));
-		for (ActualLRPResponse lrp : lrps) {
-			StringBuilder moduleStatus = new StringBuilder(descriptor.getModuleName() + ":" + lrp.getState());
-			if (StringUtils.hasText(lrp.getAddress())) {
-				moduleStatus.append("@" + lrp.getAddress());
-				if (StringUtils.hasText(lrp.getInstanceGuid())) {
-					moduleStatus.append("/" + lrp.getInstanceGuid());
-				}
-			}
-			results.add(moduleStatus.toString());
+	public ModuleStatus getStatus(ModuleDescriptor descriptor) {
+		ModuleStatusBuilder builder = ModuleStatus.of(descriptor);
+		for (ActualLRPResponse lrp : receptorClient.findLongRunningProcesses(guid(descriptor))) {
+			Map<String, String> attributes = new HashMap<String, String>();
+			attributes.put("address", lrp.getAddress());
+			attributes.put("cellId", lrp.getCellId());
+			attributes.put("domain", lrp.getDomain());
+			attributes.put("processGuid", lrp.getProcessGuid());
+			attributes.put("index", Integer.toString(lrp.getIndex()));
+			attributes.put("ports", StringUtils.arrayToCommaDelimitedString(lrp.getPorts()));
+			attributes.put("since", Long.toString(lrp.getSince()));
+			builder.with(new ModuleInstanceStatus(lrp.getInstanceGuid(), lrp.getState(), attributes));
 		}
-		return results;
+		return builder.build();
 	}
 
 	private String guid(ModuleDescriptor descriptor) {
