@@ -36,7 +36,7 @@ import xolpoc.spi.ModuleDeployer;
  */
 public class ReceptorModuleDeployer implements ModuleDeployer {
 
-	public static final String DOCKER_PATH = "docker:///springxd/xol-poc";
+	public static final String DOCKER_PATH = "docker://192.168.59.103:5000/xol-poc";
 
 	public static final String BASE_ADDRESS = "192.168.11.11.xip.io";
 
@@ -61,18 +61,18 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 		request.setPorts(new int[] {8080, 9000});
 		request.addRoute(8080, new String[] {guid + "." + BASE_ADDRESS, guid + "-8080." + BASE_ADDRESS});
 		request.addRoute(9000, new String[] {guid + "-9000." + BASE_ADDRESS});
-		receptorClient.createLongRunningProcess(request);		
+		receptorClient.createDesiredLRP(request);		
 	}
 
 	@Override
 	public void undeploy(ModuleDescriptor descriptor) {
-		receptorClient.destroyLongRunningProcess(guid(descriptor));
+		receptorClient.deleteDesiredLRP(guid(descriptor));
 	}
 
 	@Override
 	public ModuleStatus getStatus(ModuleDescriptor descriptor) {
 		ModuleStatusBuilder builder = ModuleStatus.of(descriptor);
-		for (ActualLRPResponse lrp : receptorClient.findLongRunningProcesses(guid(descriptor))) {
+		for (ActualLRPResponse lrp : receptorClient.getActualLRPsByProcessGuid(guid(descriptor))) {
 			Map<String, String> attributes = new HashMap<String, String>();
 			attributes.put("address", lrp.getAddress());
 			attributes.put("cellId", lrp.getCellId());

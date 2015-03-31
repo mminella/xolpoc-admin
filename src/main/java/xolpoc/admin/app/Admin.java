@@ -54,7 +54,7 @@ public class Admin {
 			admin.runAction.addArg(ADMIN_JAR_PATH);
 			admin.addRoute(8080, new String[] { ADMIN_GUID + "." + BASE_ADDRESS, ADMIN_GUID + "-8080." + BASE_ADDRESS});
 			ReceptorClient client = new ReceptorClient();
-			client.createLongRunningProcess(admin);
+			client.createDesiredLRP(admin);
 		}
 		else {
 			SpringApplication.run(Admin.class, args);
