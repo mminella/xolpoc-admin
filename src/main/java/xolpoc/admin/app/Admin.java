@@ -48,10 +48,10 @@ public class Admin {
 			admin.setProcessGuid(ADMIN_GUID);
 			admin.setRootfs(DOCKER_PATH);
 			admin.setInstances(2);
-			admin.runAction.setPath("java");
-			admin.runAction.addArg("-Dspring.redis.host=" + busHost);
-			admin.runAction.addArg("-jar");
-			admin.runAction.addArg(ADMIN_JAR_PATH);
+			admin.runAction().setPath("java");
+			admin.runAction().addArg("-Dspring.redis.host=" + busHost);
+			admin.runAction().addArg("-jar");
+			admin.runAction().addArg(ADMIN_JAR_PATH);
 			admin.addRoute(8080, new String[] { ADMIN_GUID + "." + BASE_ADDRESS, ADMIN_GUID + "-8080." + BASE_ADDRESS});
 			ReceptorClient client = new ReceptorClient();
 			client.createDesiredLRP(admin);

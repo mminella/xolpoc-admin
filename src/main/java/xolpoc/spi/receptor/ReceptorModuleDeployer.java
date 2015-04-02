@@ -52,12 +52,12 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 		DesiredLRPCreateRequest request = new DesiredLRPCreateRequest();
 		request.setProcessGuid(guid);
 		request.setRootfs(DOCKER_PATH);
-		request.runAction.setPath("java");
-		request.runAction.addArg("-Dmodule=" + path(descriptor));
-		request.runAction.addArg("-Dspring.redis.host=" + System.getProperty("spring.redis.host"));
-		request.runAction.addArg("-Dserver.port=500" + descriptor.getIndex());
-		request.runAction.addArg("-jar");
-		request.runAction.addArg(MODULE_JAR_PATH);
+		request.runAction().setPath("java");
+		request.runAction().addArg("-Dmodule=" + path(descriptor));
+		request.runAction().addArg("-Dspring.redis.host=" + System.getProperty("spring.redis.host"));
+		request.runAction().addArg("-Dserver.port=500" + descriptor.getIndex());
+		request.runAction().addArg("-jar");
+		request.runAction().addArg(MODULE_JAR_PATH);
 		request.setPorts(new int[] {8080, 9000});
 		request.addRoute(8080, new String[] {guid + "." + BASE_ADDRESS, guid + "-8080." + BASE_ADDRESS});
 		request.addRoute(9000, new String[] {guid + "-9000." + BASE_ADDRESS});
