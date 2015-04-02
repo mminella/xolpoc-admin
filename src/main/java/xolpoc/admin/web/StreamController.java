@@ -73,10 +73,14 @@ public class StreamController {
 	@ResponseStatus(HttpStatus.OK)
 	public void destroyStream(@PathVariable("name") String name) {
 		StreamDefinition definition = repository.find(name);
+		if (definition == null) {
+			throw new IllegalArgumentException("unable to find definition for: " + name);
+		}
 		List<ModuleDescriptor> modules = definition.getModuleDescriptors();
 		for (ModuleDescriptor module : modules) {
 			deployer.undeploy(module);
 		}
+		repository.delete(name);
 	}
 
 }
