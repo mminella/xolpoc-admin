@@ -47,7 +47,7 @@ public class Admin {
 			DesiredLRPCreateRequest admin = new DesiredLRPCreateRequest();
 			admin.setProcessGuid(ADMIN_GUID);
 			admin.setRootfs(DOCKER_PATH);
-			admin.setInstances(2);
+			admin.setInstances(1);
 			admin.runAction().setPath("java");
 			admin.runAction().addArg("-Dspring.redis.host=" + busHost);
 			admin.runAction().addArg("-jar");
