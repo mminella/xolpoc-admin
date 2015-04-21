@@ -54,6 +54,12 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 		request.setRootfs(DOCKER_PATH);
 		request.runAction().setPath("java");
 		request.runAction().addArg("-Dmodule=" + path(descriptor));
+		Map<String, String> parameters = descriptor.getParameters();
+		if (parameters != null && parameters.size() > 0) {
+			for (Map.Entry<String, String> option : parameters.entrySet()) {
+				request.runAction().addArg("-Doption." + option.getKey() + "=" + option.getValue());
+			}
+		}
 		request.runAction().addArg("-Dspring.redis.host=" + System.getProperty("spring.redis.host"));
 		request.runAction().addArg("-Dserver.port=500" + descriptor.getIndex());
 		request.runAction().addArg("-jar");

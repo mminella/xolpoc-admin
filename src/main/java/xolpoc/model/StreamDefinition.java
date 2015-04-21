@@ -37,12 +37,22 @@ public class StreamDefinition {
 		this.name = name;
 		String[] modules = StringUtils.tokenizeToStringArray(dsl, "|");
 		for (int i = modules.length - 1; i >= 0; i--) {
-			ModuleDescriptor descriptor = new ModuleDescriptor.Builder()
-					.setModuleName(modules[i])
+			String[] nameAndOptions = modules[i].split("\\s", 2);
+			String moduleName = nameAndOptions[0];
+			ModuleDescriptor.Builder builder = new ModuleDescriptor.Builder()
+					.setModuleName(moduleName)
 					.setType((i == 0) ? ModuleType.source : (i == modules.length - 1) ? ModuleType.sink : ModuleType.processor)
 					.setGroup(name)
-					.setIndex(i)
-					.build();
+					.setIndex(i);
+			if (nameAndOptions.length == 2) {
+				String optionsString = nameAndOptions[1];
+				String[] optionTokens = optionsString.split("\\s");
+				for (String s : optionTokens) {
+					String[] kv = s.split("=", 2);
+					builder.setParameter(kv[0].replaceFirst("--", ""), kv[1]);
+				}
+			}
+			ModuleDescriptor descriptor = builder.build();
 			moduleDescriptors.add(descriptor);
 		}
 	}
