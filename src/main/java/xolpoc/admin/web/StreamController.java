@@ -41,13 +41,14 @@ import xolpoc.spi.receptor.ReceptorModuleDeployer;
  * @author Mark Fisher
  */
 @RestController
+@RequestMapping("/streams")
 public class StreamController {
 
 	private final StreamDefinitionRepository repository = new InMemoryStreamDefinitionRepository();
 
 	private final ModuleDeployer deployer = new ReceptorModuleDeployer();
 
-	@RequestMapping(value="/")
+	@RequestMapping
 	public Map<String, List<ModuleStatus>> listStreams() {
 		Map<String, List<ModuleStatus>> results = new HashMap<String, List<ModuleStatus>>();
 		for (Map.Entry<String, StreamDefinition> entry : repository.findAll().entrySet()) {
