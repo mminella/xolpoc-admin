@@ -16,14 +16,6 @@
 
 package xolpoc.admin.app;
 
-import static xolpoc.spi.receptor.ReceptorModuleDeployer.ADMIN_GUID;
-import static xolpoc.spi.receptor.ReceptorModuleDeployer.BASE_ADDRESS;
-import static xolpoc.spi.receptor.ReceptorModuleDeployer.DOCKER_PATH;
-import io.pivotal.receptor.client.ReceptorClient;
-import io.pivotal.receptor.commands.DesiredLRPCreateRequest;
-
-import java.net.Inet4Address;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -58,27 +50,8 @@ import xolpoc.admin.web.StreamController;
 @Import({AdminController.class, StreamController.class})
 public class Admin {
 
-	private static final String ADMIN_JAR_PATH = "/opt/xd/lib/xolpoc-admin-0.0.1-SNAPSHOT.jar";
-
 	public static void main(String[] args) throws Exception {
-		String busHost = System.getProperty("spring.redis.host");
-		if (busHost == null) { // bootstrap
-			busHost = Inet4Address.getLocalHost().getHostAddress();
-			DesiredLRPCreateRequest admin = new DesiredLRPCreateRequest();
-			admin.setProcessGuid(ADMIN_GUID);
-			admin.setRootfs(DOCKER_PATH);
-			admin.setInstances(1);
-			admin.runAction().setPath("java");
-			admin.runAction().addArg("-Dspring.redis.host=" + busHost);
-			admin.runAction().addArg("-jar");
-			admin.runAction().addArg(ADMIN_JAR_PATH);
-			admin.addRoute(8080, new String[] { ADMIN_GUID + "." + BASE_ADDRESS, ADMIN_GUID + "-8080." + BASE_ADDRESS});
-			ReceptorClient client = new ReceptorClient();
-			client.createDesiredLRP(admin);
-		}
-		else {
-			SpringApplication.run(Admin.class, args);
-		}
+		SpringApplication.run(Admin.class, args);
 	}
 
 	@Autowired

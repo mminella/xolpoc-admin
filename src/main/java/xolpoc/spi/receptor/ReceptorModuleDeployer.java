@@ -19,8 +19,11 @@ package xolpoc.spi.receptor;
 import io.pivotal.receptor.client.ReceptorClient;
 import io.pivotal.receptor.commands.ActualLRPResponse;
 import io.pivotal.receptor.commands.DesiredLRPCreateRequest;
+import io.pivotal.receptor.support.EnvironmentVariable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.util.StringUtils;
@@ -36,13 +39,11 @@ import xolpoc.spi.ModuleDeployer;
  */
 public class ReceptorModuleDeployer implements ModuleDeployer {
 
-	public static final String DOCKER_PATH = "docker://192.168.59.103:5000/xol-poc";
+	public static final String DOCKER_PATH = "docker://192.168.59.103:5000/xd-module";
 
 	public static final String BASE_ADDRESS = "192.168.11.11.xip.io";
 
 	public static final String ADMIN_GUID = "xd-admin";
-
-	private static final String MODULE_JAR_PATH = "/opt/xd/lib/xolpoc-0.0.1-SNAPSHOT.jar";
 
 	private final ReceptorClient receptorClient = new ReceptorClient();
 
@@ -53,21 +54,25 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 		request.setProcessGuid(guid);
 		request.setRootfs(DOCKER_PATH);
 		request.runAction().setPath("java");
-		request.runAction().addArg("-Dmodule=" + path(descriptor));
+		request.runAction().addArg("-Djava.security.egd=file:/dev/./urandom");
+		request.runAction().addArg("-jar");
+		request.runAction().addArg("/xd-module.jar");
+		List<EnvironmentVariable> environmentVariables = new ArrayList<EnvironmentVariable>();
+		for (EnvironmentVariable var : request.getEnv()) {
+			environmentVariables.add(var);
+		}
+		environmentVariables.add(new EnvironmentVariable("XD_MODULE", path(descriptor)));
 		Map<String, String> parameters = descriptor.getParameters();
 		if (parameters != null && parameters.size() > 0) {
 			for (Map.Entry<String, String> option : parameters.entrySet()) {
-				request.runAction().addArg("-Doption." + option.getKey() + "=" + option.getValue());
+				environmentVariables.add(new EnvironmentVariable("OPTION_" + option.getKey(), option.getValue()));
 			}
 		}
-		request.runAction().addArg("-Dspring.redis.host=" + System.getProperty("spring.redis.host"));
-		request.runAction().addArg("-Dserver.port=500" + descriptor.getIndex());
-		request.runAction().addArg("-jar");
-		request.runAction().addArg(MODULE_JAR_PATH);
+		request.setEnv(environmentVariables.toArray(new EnvironmentVariable[environmentVariables.size()]));
 		request.setPorts(new int[] {8080, 9000});
 		request.addRoute(8080, new String[] {guid + "." + BASE_ADDRESS, guid + "-8080." + BASE_ADDRESS});
 		request.addRoute(9000, new String[] {guid + "-9000." + BASE_ADDRESS});
-		receptorClient.createDesiredLRP(request);		
+		receptorClient.createDesiredLRP(request);
 	}
 
 	@Override

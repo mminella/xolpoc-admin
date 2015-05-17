@@ -16,7 +16,7 @@
 $ export XD_HOME=/usr/local/Cellar/springxd/1.1.2.RELEASE/libexec/xd
 ````
 
-5: Create a top level directory for the various xolpoc repositories, for example:
+5: Create a top level directory for the xolpoc repositories, for example:
 
 ````
 $ mkdir ~/xolpoc-workspace
@@ -32,40 +32,31 @@ $ ./gradlew install
 $ cd ..
 ````
 
-7: Build the container-less ModuleRunner project:
+7: Build the container-less Module project and its Docker image:
 
 ````
 $ git clone https://github.com/markfisher/xolpoc.git
 $ cd xolpoc
 $ ./gradlew build
-$ export XD_POC_MODULE=`pwd`
+$ ./dockerize.sh
 $ cd ..
 ````
 
-8: Build the Admin project:
+8: Build the Admin project and its Docker image:
 
 ````
 $ git clone https://github.com/markfisher/xolpoc-admin.git
 $ cd xolpoc-admin
 $ ./gradlew build
-$ export XD_POC_ADMIN=`pwd`
+$ ./dockerize.sh
 $ cd ..
 ````
 
-9: Build the Docker image in xolpoc-docker:
+9: Push the Docker images to the private registry (if necessary, run `$(boot2docker shellinit)` first):
 
 ````
-$ git clone https://github.com/markfisher/xolpoc-docker.git
-$ cd xolpoc-docker
-$ ./build
-````
-
-10: Push the docker image to the local registry. First, run `docker images` to get the image ID for springxd/xol-poc, then tag it for the local registry:
-
-````
-$ IMAGE_ID=`docker images | grep springxd/xol-poc | awk '{ print $3 }'`
-$ docker tag -f $IMAGE_ID 192.168.59.103:5000/xol-poc
-$ docker push 192.168.59.103:5000/xol-poc
+$ docker push 192.168.59.103:5000/xd-module
+$ docker push 192.168.59.103:5000/xd-admin
 ````
 
 ## B: Starting XD Admin
@@ -76,10 +67,10 @@ $ docker push 192.168.59.103:5000/xol-poc
 $ ltc create redis redis -r
 ````
 
-2: Run the Admin jar to bootstrap an xd-admin LRP onto the Diego runtime:
+2: Run the xd-admin as a long-running process (LRP) on Lattice:
 
 ````
-$ java -jar $XD_POC_ADMIN/build/libs/xolpoc-admin-0.0.1-SNAPSHOT.jar
+$ ltc create xd-admin 192.168.59.103:5000/xd-admin
 ````
 
 3: You should now see the xd-admin when you execute ltc list.
@@ -111,7 +102,7 @@ $ curl http://xd-admin.192.168.11.11.xip.io/streams
 
 ````
 ltc scale xd-ticktock-log-1 2
-ltc list      # now shows 2 instances of xd-ticktock-log-1
+ltc list                        # now shows 2 instances of xd-ticktock-log-1
 ````
 
 5: Delete the ticktock stream:
