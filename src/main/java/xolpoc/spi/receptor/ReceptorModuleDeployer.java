@@ -39,7 +39,7 @@ import xolpoc.spi.ModuleDeployer;
  */
 public class ReceptorModuleDeployer implements ModuleDeployer {
 
-	public static final String DOCKER_PATH = "docker://192.168.59.103:5000/xd-module";
+	public static final String DOCKER_PATH = "docker://192.168.59.103:5000/module-launcher";
 
 	public static final String BASE_ADDRESS = "192.168.11.11.xip.io";
 
@@ -56,12 +56,12 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 		request.runAction().setPath("java");
 		request.runAction().addArg("-Djava.security.egd=file:/dev/./urandom");
 		request.runAction().addArg("-jar");
-		request.runAction().addArg("/xd-module.jar");
+		request.runAction().addArg("/module-launcher.jar");
 		List<EnvironmentVariable> environmentVariables = new ArrayList<EnvironmentVariable>();
 		for (EnvironmentVariable var : request.getEnv()) {
 			environmentVariables.add(var);
 		}
-		environmentVariables.add(new EnvironmentVariable("XD_MODULE", path(descriptor)));
+		environmentVariables.add(new EnvironmentVariable("module", path(descriptor)));
 		Map<String, String> parameters = descriptor.getParameters();
 		if (parameters != null && parameters.size() > 0) {
 			for (Map.Entry<String, String> option : parameters.entrySet()) {
@@ -102,7 +102,7 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 	}
 
 	private String path(ModuleDescriptor descriptor) {
-		return descriptor.getGroup() + "." + descriptor.getType() + "." + descriptor.getModuleName() + "." + descriptor.getIndex();
+		return descriptor.getType() + ":" + descriptor.getModuleName();
 	}
 
 }
