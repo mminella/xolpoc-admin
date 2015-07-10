@@ -61,7 +61,7 @@ public class ReceptorModuleDeployer implements ModuleDeployer {
 		for (EnvironmentVariable var : request.getEnv()) {
 			environmentVariables.add(var);
 		}
-		environmentVariables.add(new EnvironmentVariable("MODULE", path(descriptor)));
+		environmentVariables.add(new EnvironmentVariable("MODULES", path(descriptor)));
 		environmentVariables.add(new EnvironmentVariable("SPRING_PROFILES_ACTIVE", "cloud"));
 		Map<String, String> parameters = descriptor.getParameters();
 		if (parameters != null && parameters.size() > 0) {
