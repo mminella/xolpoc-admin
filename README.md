@@ -6,24 +6,7 @@
 
 2: Run a private Docker registry, and configure Lattice to use that as described [here](http://lattice.cf/docs/private-docker-registry/).
 
-3: Install Spring XD as described [here](http://docs.spring.io/spring-xd/docs/current/reference/html/#osx-homebrew-installation) for homebrew users (or see the link beneath that for alternatives).
-
-*NOTE:* There is no need to start xd-singlenode. The installation is only needed for the modules that will be included in the Docker image you will build in an upcoming step.
-
-4: Export XD_HOME, for example:
-
-````
-$ export XD_HOME=/usr/local/Cellar/springxd/1.1.2.RELEASE/libexec/xd
-````
-
-5: Create a top level directory for the xolpoc repositories, for example:
-
-````
-$ mkdir ~/xolpoc-workspace
-$ cd ~/xolpoc-workspace
-````
-
-6: Build the receptor-client and install the JAR into your local Maven repository:
+3: Build the receptor-client and install the JAR into your local Maven repository:
 
 ````
 $ git clone https://github.com/markfisher/receptor-client.git
@@ -32,17 +15,17 @@ $ ./gradlew install
 $ cd ..
 ````
 
-7: Build the container-less Module project and its Docker image:
+4: Build the module-launcher project and its Docker image:
 
 ````
-$ git clone https://github.com/markfisher/xolpoc.git
-$ cd xolpoc
+$ git clone https://github.com/markfisher/module-launcher.git
+$ cd module-launcher
 $ ./gradlew build
 $ ./dockerize.sh
 $ cd ..
 ````
 
-8: Build the Admin project and its Docker image:
+5: Build this project and its Docker image:
 
 ````
 $ git clone https://github.com/markfisher/xolpoc-admin.git
@@ -52,10 +35,10 @@ $ ./dockerize.sh
 $ cd ..
 ````
 
-9: Push the Docker images to the private registry (if necessary, run `$(boot2docker shellinit)` first):
+6: Push the Docker images to the private registry (if necessary, run `$(boot2docker shellinit)` first):
 
 ````
-$ docker push 192.168.59.103:5000/xd-module
+$ docker push 192.168.59.103:5000/module-launcher
 $ docker push 192.168.59.103:5000/xd-admin
 ````
 
