@@ -29,12 +29,12 @@ public class ModuleInstanceStatus {
 
 	private final String state;
 
-	private final Map<String, String> attrributes = new HashMap<String, String>();
+	private final Map<String, String> attributes = new HashMap<String, String>();
 
 	public ModuleInstanceStatus(String id, String state, Map<String, String> attributes) {
 		this.id = id;
 		this.state = (state != null ? state : "unknown");
-		this.attrributes.putAll(attributes);
+		this.attributes.putAll(attributes);
 	}
 
 	public String getId() {
@@ -45,7 +45,7 @@ public class ModuleInstanceStatus {
 		return state;
 	}
 
-	public Map<String, String> getAttrributes() {
-		return Collections.unmodifiableMap(attrributes);
+	public Map<String, String> getAttributes() {
+		return Collections.unmodifiableMap(attributes);
 	}
 }
