@@ -18,7 +18,7 @@ package xolpoc.spi.local;
 
 import java.io.File;
 
-import org.springframework.pipes.module.launcher.ModuleLauncher;
+import org.springframework.cloud.stream.module.launcher.ModuleLauncher;
 import org.springframework.xd.module.ModuleDescriptor;
 
 import xolpoc.model.ModuleStatus;
