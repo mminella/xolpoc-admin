@@ -4,6 +4,7 @@
 .settings
 bin
 build
+out/
 dump.rdb
 .idea
 *.iml

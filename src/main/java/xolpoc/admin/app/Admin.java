@@ -17,6 +17,7 @@
 package xolpoc.admin.app;
 
 import org.apache.catalina.webresources.TomcatURLStreamHandlerFactory;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -27,7 +28,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.util.ObjectUtils;
 
 import xolpoc.admin.web.StreamController;
 import xolpoc.admin.web.TaskController;
@@ -42,7 +42,7 @@ public class Admin {
 
 	public static void main(String[] args) throws Exception {
 		TomcatURLStreamHandlerFactory.disable();
-		SpringApplication.run(Admin.class, ObjectUtils.addObjectToArray(args, "--spring.config.name=admin"));
+		SpringApplication.run(Admin.class);
 	}
 
 	@Configuration
