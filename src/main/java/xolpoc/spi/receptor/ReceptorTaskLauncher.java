@@ -28,31 +28,42 @@ import io.pivotal.receptor.commands.TaskResponse;
 import io.pivotal.receptor.support.EnvironmentVariable;
 import xolpoc.model.TaskDescriptor;
 import xolpoc.model.TaskStatus;
-import xolpoc.spi.TaskDeployer;
+import xolpoc.spi.TaskDescriptorRepository;
+import xolpoc.spi.TaskLauncher;
+
+import org.springframework.util.Assert;
 
 /**
  * @author Michael Minella
  */
-public class ReceptorTaskDeployer implements TaskDeployer {
+public class ReceptorTaskLauncher implements TaskLauncher {
 
 	public static final String DOCKER_PATH = "docker://192.168.59.103:5000/module-launcher";
 
 	private final ReceptorClient receptorClient = new ReceptorClient();
 
-	@Override
-	public void deploy(TaskDescriptor descriptor) {
+	private TaskDescriptorRepository repository;
 
-		//TODO Add endpoint callback to be able to have lattice notify admin that the task has been completed
+	public ReceptorTaskLauncher(TaskDescriptorRepository repository) {
+		Assert.notNull(repository, "A TaskDescriptorRepository is required");
+
+		this.repository = repository;
+	}
+
+	@Override
+	public void launch(String taskName, String[] args) {
+
+		TaskDescriptor taskDescriptor = repository.find(taskName);
 
 		Map<String, RunAction> action = new HashMap<>();
 		RunAction runAction = new RunAction();
 		runAction.setPath("java");
 		runAction.setArgs(new String[] {"-Djava.security.egd=file:/dev/./urandom", "-jar",
-				String.format("/opt/spring/modules/%s.jar", descriptor.getModuleName())});
+				String.format("/opt/spring/modules/%s.jar", taskDescriptor.getModuleName())});
 		action.put("run", runAction);
 
 		TaskCreateRequest request = new TaskCreateRequest();
-		request.setTaskGuid(guid(descriptor));
+		request.setTaskGuid(taskDescriptor.getGuid());
 		request.setRootfs(DOCKER_PATH);
 		request.setLogGuid(request.getTaskGuid());
 		request.setAction(action);
@@ -62,7 +73,7 @@ public class ReceptorTaskDeployer implements TaskDeployer {
 		Collections.addAll(environmentVariables, request.getEnv());
 
 		environmentVariables.add(new EnvironmentVariable("SPRING_PROFILES_ACTIVE", "cloud"));
-		Map<String, String> parameters = descriptor.getParameters();
+		Map<String, String> parameters = taskDescriptor.getParameters();
 		if (parameters != null && parameters.size() > 0) {
 			for (Map.Entry<String, String> option : parameters.entrySet()) {
 				environmentVariables.add(
@@ -74,35 +85,13 @@ public class ReceptorTaskDeployer implements TaskDeployer {
 		receptorClient.createTask(request);
 	}
 
-	private String guid(TaskDescriptor descriptor) {
-		return "xd-" + descriptor.getGroup() + "-" + descriptor.getModuleName();
-	}
-
-	private String path(TaskDescriptor descriptor) {
-		return descriptor.getGroup() + "." + descriptor.getModuleName();
-	}
-
-	@Override
-	public void undeploy(TaskDescriptor descriptor) {
-		receptorClient.deleteTask(guid(descriptor));
-	}
-
 	@Override
 	public TaskStatus getStatus(TaskDescriptor descriptor) {
-		TaskResponse task = null;
-		try {
-			task = receptorClient.getTask(guid(descriptor));
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-		TaskStatus taskStatus = new TaskStatus(descriptor, task.getTaskGuid(), task.getState(), task.isFailed(), task.getFailureReason());
-
-		taskStatus.addAttribute("cellId", task.getCellId());
-		taskStatus.addAttribute("domain", task.getDomain());
-		taskStatus.addAttribute("processGuid", task.getTaskGuid());
-
-		return taskStatus;
+		TaskResponse task = receptorClient.getTask(descriptor.getGuid());
+		return new TaskStatus(descriptor,
+				descriptor.getGuid(),
+				task.getState(),
+				task.isFailed(),
+				task.getFailureReason());
 	}
 }

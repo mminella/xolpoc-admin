@@ -99,3 +99,29 @@ $ curl -X DELETE http://xd-admin.192.168.11.11.xip.io/streams/ticktock
 ````
 $ curl http://xd-admin.192.168.11.11.xip.io/streams
 ````
+
+## D: Deploying XD Jobs
+
+1: View the current jobs (should be empty):
+
+````
+$ curl http://xd-admin.192.168.11.11.xip.io/tasks
+````
+
+2: Deploy timestampfile job:
+
+````
+$ curl -X POST -H "Content-Type: text/plain" --data "timestampfile" http://xd-admin.192.168.11.11.xip.io/tasks/timestampfile
+````
+
+3: View the jobs again (should see *timestampfile* this time):
+
+````
+$ curl http://xd-admin.192.168.11.11.xip.io/tasks
+````
+
+5: Verify no jobs are still running:
+
+````
+$ curl http://xd-admin.192.168.11.11.xip.io/tasks
+````

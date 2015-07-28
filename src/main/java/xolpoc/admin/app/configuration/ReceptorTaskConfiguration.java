@@ -13,21 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package xolpoc.admin.app.configuration;
 
-package xolpoc.spi;
-
-import java.util.Map;
-
-import xolpoc.model.TaskStatus;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 /**
  * @author Michael Minella
  */
-public interface TaskDeployer {
-
-	void deploy(String name, String dsl);
-
-	Map<String, TaskStatus> list();
-
-	void undeploy(String name);
+@Configuration
+@Profile("cloud")
+public class ReceptorTaskConfiguration {
+//
+//	@Bean
+//	public TaskDeployer deployer() {
+//		return new SimpleTaskDeployer();
+//	}
+//
+//	@Bean
+//	public TaskDescriptorRepository repository() {
+//		return new InMemoryTaskDescriptorRepository();
+//	}
+//
+//	@Bean
+//	public TaskLauncher launcher() {
+//		return new ReceptorTaskLauncher(repository());
+//	}
 }

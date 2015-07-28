@@ -15,21 +15,20 @@
  */
 package xolpoc.admin.web;
 
-import java.util.HashMap;
 import java.util.Map;
 
-import xolpoc.model.TaskDescriptor;
 import xolpoc.model.TaskStatus;
 import xolpoc.spi.TaskDeployer;
-import xolpoc.spi.TaskDescriptorRepository;
-import xolpoc.spi.defaults.InMemoryTaskDescriptorRepository;
-import xolpoc.spi.receptor.ReceptorTaskDeployer;
+import xolpoc.spi.TaskLauncher;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,44 +39,60 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/tasks")
 public class TaskController {
 
-	private final TaskDeployer deployer = new ReceptorTaskDeployer();
+	@Autowired
+	private TaskDeployer deployer;
 
-	private final TaskDescriptorRepository repository =
-			new InMemoryTaskDescriptorRepository();
+	@Autowired
+	private TaskLauncher launcher;
 
 	@RequestMapping
 	public Map<String, TaskStatus> listTasks() {
-		Map<String, TaskStatus> results = new HashMap<>();
-
-		for (Map.Entry<String, TaskDescriptor> entry : repository.findAll().entrySet()) {
-			TaskStatus status = deployer.getStatus(entry.getValue());
-
-			if(status == null) {
-				repository.delete(entry.getKey());
-			}
-			else {
-				results.put(entry.getKey(), status);
-			}
-		}
-
-		return results;
+		System.out.println("About to list " + deployer.list().size() + " tasks");
+		return deployer.list();
 	}
 
 	@RequestMapping(value = "/{name}", method = RequestMethod.POST)
 	public void createTask(@PathVariable("name") String name, @RequestBody String dsl) {
-		TaskDescriptor definition = repository.create(name, dsl);
-		deployer.deploy(definition);
+		System.out.println("About to deploy " + name + " with dsl " + dsl);
+		deployer.deploy(name, dsl);
 	}
 
 	@RequestMapping(value = "/{name}", method = RequestMethod.DELETE)
 	@ResponseStatus(HttpStatus.OK)
 	public void destroyTask(@PathVariable("name") String name) {
-		TaskDescriptor definition = repository.find(name);
-		if (definition == null) {
-			throw new IllegalArgumentException("unable to find definition for: " + name);
+		deployer.undeploy(name);
+	}
+
+	@RequestMapping(value = "/{name}", method = RequestMethod.PUT)
+	@ResponseStatus(HttpStatus.OK)
+	public void launchTask(@PathVariable("name") String name,
+			@RequestParam(value = "args", required = false) String argString) {
+		String [] args;
+
+		if(StringUtils.hasText(argString)) {
+			args = argString.split(",");
+		}
+		else {
+			args = new String [0];
 		}
 
-		deployer.undeploy(definition);
-		repository.delete(name);
+		//TODO: Replace with call to Spring Cloud Streams?
+		launcher.launch(name, args);
 	}
+//
+//	private TaskDescriptor createTaskDescriptor(String name, String dsl) {
+//		String[] nameAndOptions = dsl.split("\\s", 2);
+//		Map<String, String> parameters = new HashMap<>();
+//
+//		if (nameAndOptions.length == 2) {
+//			String optionsString = nameAndOptions[1];
+//			String[] optionTokens = optionsString.split("\\s");
+//			for (String s : optionTokens) {
+//				String[] kv = s.split("=", 2);
+//				parameters.put(kv[0].replaceFirst("--", ""), kv[1]);
+//			}
+//		}
+//
+//		return new TaskDescriptor(name, null, name, parameters, nameAndOptions[0]);
+//	}
 }

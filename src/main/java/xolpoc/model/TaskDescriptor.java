@@ -54,4 +54,9 @@ public class TaskDescriptor {
 	public String getName() {
 		return name;
 	}
+
+	public String getGuid() {
+		return "xd-" + group + "-" + name;
+	}
+
 }

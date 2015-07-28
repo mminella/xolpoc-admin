@@ -42,6 +42,7 @@ public class InMemoryTaskDescriptorRepository implements TaskDescriptorRepositor
 
 	@Override
 	public TaskDescriptor create(String name, String dsl) {
+		System.out.println("name = " + name + " dsl = " + dsl);
 		String[] nameAndOptions = dsl.split("\\s", 2);
 		Map<String, String> parameters = new HashMap<>();
 
@@ -53,6 +54,8 @@ public class InMemoryTaskDescriptorRepository implements TaskDescriptorRepositor
 				parameters.put(kv[0].replaceFirst("--", ""), kv[1]);
 			}
 		}
+
+		System.out.println("name after parsing = " + name + " parameters = " + parameters + " options " + nameAndOptions[0]);
 
 		TaskDescriptor taskDescriptor = new TaskDescriptor(name, null, name, parameters, nameAndOptions[0]);
 
