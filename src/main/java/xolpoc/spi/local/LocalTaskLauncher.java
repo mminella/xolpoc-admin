@@ -17,6 +17,7 @@ package xolpoc.spi.local;
 
 import java.io.File;
 
+import xolpoc.model.NoTaskFoundException;
 import xolpoc.model.TaskDescriptor;
 import xolpoc.model.TaskStatus;
 import xolpoc.spi.TaskDescriptorRepository;
@@ -40,8 +41,12 @@ public class LocalTaskLauncher implements TaskLauncher {
 	}
 
 	@Override
-	public void launch(String taskName, String[] args) {
+	public void launch(String taskName, String[] args) throws NoTaskFoundException {
 		TaskDescriptor taskDescriptor = repository.find(taskName);
+
+		if(taskDescriptor == null) {
+			throw new NoTaskFoundException(String.format("Unable to find task %s to launch", taskName));
+		}
 
 		launcher.launch(new String[] {taskDescriptor.getModuleName()}, args);
 	}
