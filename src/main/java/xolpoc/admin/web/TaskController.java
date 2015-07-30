@@ -47,13 +47,11 @@ public class TaskController {
 
 	@RequestMapping
 	public Map<String, TaskStatus> listTasks() {
-		System.out.println("About to list " + deployer.list().size() + " tasks");
 		return deployer.list();
 	}
 
 	@RequestMapping(value = "/{name}", method = RequestMethod.POST)
 	public void createTask(@PathVariable("name") String name, @RequestBody String dsl) {
-		System.out.println("About to deploy " + name + " with dsl " + dsl);
 		deployer.deploy(name, dsl);
 	}
 

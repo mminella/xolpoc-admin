@@ -15,8 +15,6 @@
  */
 package xolpoc.spi.local;
 
-import java.io.File;
-
 import xolpoc.model.NoTaskFoundException;
 import xolpoc.model.TaskDescriptor;
 import xolpoc.model.TaskStatus;
@@ -32,7 +30,7 @@ import org.springframework.util.Assert;
 public class LocalTaskLauncher implements TaskLauncher {
 
 	private TaskDescriptorRepository repository;
-	private ModuleLauncher launcher = new ModuleLauncher(new File("/opt/spring/modules"));
+	private ModuleLauncher launcher = new ModuleLauncher();
 
 	public LocalTaskLauncher(TaskDescriptorRepository repository) {
 		Assert.notNull(repository, "A TaskDescriptorRepository is required");

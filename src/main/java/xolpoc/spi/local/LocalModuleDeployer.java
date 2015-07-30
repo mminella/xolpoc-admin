@@ -16,20 +16,18 @@
 
 package xolpoc.spi.local;
 
-import java.io.File;
+import xolpoc.model.ModuleStatus;
+import xolpoc.spi.ModuleDeployer;
 
 import org.springframework.cloud.stream.module.launcher.ModuleLauncher;
 import org.springframework.xd.module.ModuleDescriptor;
-
-import xolpoc.model.ModuleStatus;
-import xolpoc.spi.ModuleDeployer;
 
 /**
  * @author Mark Fisher
  */
 public class LocalModuleDeployer implements ModuleDeployer {
 
-	ModuleLauncher launcher = new ModuleLauncher(new File("/opt/spring/modules"));
+	ModuleLauncher launcher = new ModuleLauncher();
 
 	@Override
 	public void deploy(ModuleDescriptor descriptor) {
